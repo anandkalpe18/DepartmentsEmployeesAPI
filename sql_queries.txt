@@ -1,0 +1,56 @@
+-- 1. Get department-wise total employee count
+SELECT 
+    d.DeptId, 
+    d.DeptName, 
+    COUNT(e.EmpId) AS EmployeeCount
+FROM Departments d
+LEFT JOIN Employees e 
+    ON e.DeptId = d.DeptId AND e.IsDeleted = 0
+GROUP BY d.DeptId, d.DeptName;
+
+
+-- 2. Get employees who joined in the last 1 year
+SELECT * 
+FROM Employees 
+WHERE JoiningDate >= DATEADD(YEAR, -1, GETDATE()) 
+  AND IsDeleted = 0;
+
+
+-- 3. Get average salary department-wise (for active departments only)
+SELECT 
+    d.DeptId, 
+    d.DeptName, 
+    AVG(e.Salary) AS AvgSalary
+FROM Departments d
+JOIN Employees e 
+    ON e.DeptId = d.DeptId AND e.IsDeleted = 0
+GROUP BY d.DeptId, d.DeptName;
+
+
+-- 4. Find employees earning above their department’s average salary
+SELECT e.*
+FROM Employees e
+JOIN (
+    SELECT DeptId, AVG(Salary) AS DeptAvg
+    FROM Employees
+    WHERE IsDeleted = 0
+    GROUP BY DeptId
+) agg ON e.DeptId = agg.DeptId
+WHERE e.Salary > agg.DeptAvg 
+  AND e.IsDeleted = 0;
+
+
+-- 5. Get department with the maximum number of employees
+WITH DeptCounts AS (
+    SELECT 
+        d.DeptId, 
+        d.DeptName, 
+        COUNT(e.EmpId) AS EmployeeCount
+    FROM Departments d
+    LEFT JOIN Employees e 
+        ON e.DeptId = d.DeptId AND e.IsDeleted = 0
+    GROUP BY d.DeptId, d.DeptName
+)
+SELECT DeptId, DeptName, EmployeeCount
+FROM DeptCounts
+WHERE EmployeeCount = (SELECT MAX(EmployeeCount) FROM DeptCounts);
